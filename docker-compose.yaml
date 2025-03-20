@@ -1,0 +1,36 @@
+services:
+  flask:
+    build:
+      context: .
+    container_name: atproto-demo-flask
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./.env:/usr/src/app/.env
+      - flask_data:/var/flask_data
+    networks:
+      - app-network
+
+  caddy:
+    image: caddy:2
+    container_name: atproto-demo-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  flask_data:
+  caddy_data:
+  caddy_config:

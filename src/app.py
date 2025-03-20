@@ -14,7 +14,9 @@ from flask import (
     session,
     abort,
 )
+from flask.cli import load_dotenv
 from authlib.jose import JsonWebKey
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from atproto_identity import (
     is_valid_did,
@@ -34,6 +36,15 @@ from atproto_security import is_safe_url
 
 app = Flask(__name__)
 
+
+# https://flask.palletsprojects.com/en/stable/deploying/proxy_fix/
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
+# https://flask.palletsprojects.com/en/stable/cli/#environment-variables-from-dotenv
+# > The files are only loaded by the flask command or calling run().
+# > If you would like to load these files when running in production, you should call load_dotenv() manually.
+load_dotenv()
+
 # Load this configuration from environment variables (which might mean a .env "dotenv" file)
 app.config.from_prefixed_env()
 
@@ -49,7 +60,7 @@ assert "d" not in CLIENT_PUB_JWK
 def get_db():
     db = getattr(g, "_database", None)
     if db is None:
-        db_path = app.config.get("DATABASE_URL", "demo.sqlite")
+        db_path = app.config.get("DATABASE_URL", "/var/flask_data/demo.sqlite")
         db = g._database = sqlite3.connect(db_path)
         db.row_factory = sqlite3.Row
     return db
